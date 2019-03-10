@@ -17,21 +17,28 @@ echo "Installing PWGEN"
 sudo apt-get install -y pwgen
 
 echo "Installing 2G Swapfile"
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
+sudo /etc/init.d/dphys-swapfile stop
+sudo /etc/init.d/dphys-swapfile start
+free -m
+#sudo fallocate -l 2G /swapfile
+#sudo chmod 600 /swapfile
+#sudo mkswap /swapfile
+#sudo swapon /swapfile
+#echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 echo "Installing Dependencies"
-sudo apt-get --assume-yes install git unzip build-essential libssl-dev libdb++-dev libboost-all-dev libqrencode-dev libminiupnpc-dev libgmp-dev libevent-dev autogen automake  libtool
+sudo apt-get --assume-yes install git unzip build-essential libssl-dev libdb++-dev libboost-all-dev libqrencode-dev libminiupnpc-dev libevent-dev autogen automake  libtool
 
-echo "Downgrade libssl-dev"
+echo "OpenSSL 1.0.1j"
 sudo apt-get install make
 wget https://www.openssl.org/source/openssl-1.0.1j.tar.gz
 tar -xzvf openssl-1.0.1j.tar.gz
 cd openssl-1.0.1j
-sudo ./config
+./config
+make depend
+make
+#make test
 sudo make install
 sudo ln -sf /usr/local/ssl/bin/openssl `which openssl`
 cd ~
@@ -80,21 +87,28 @@ echo "Installing curl"
 sudo apt-get install curl -y
 
 echo "Installing 2G Swapfile"
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
+sudo /etc/init.d/dphys-swapfile stop
+sudo /etc/init.d/dphys-swapfile start
+free -m
+#sudo fallocate -l 2G /swapfile
+#sudo chmod 600 /swapfile
+#sudo mkswap /swapfile
+#sudo swapon /swapfile
+#echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 echo "Installing Dependencies"
 sudo apt-get --assume-yes install git unzip build-essential libdb++-dev libboost-all-dev libqrencode-dev libminiupnpc-dev libevent-dev autogen automake libtool libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools qt5-default
 
-echo "Downgrade libssl-dev"
+echo "OpenSSL 1.0.1j"
 sudo apt-get install make
 wget https://www.openssl.org/source/openssl-1.0.1j.tar.gz
 tar -xzvf openssl-1.0.1j.tar.gz
 cd openssl-1.0.1j
-sudo ./config
+./config
+make depend
+make
+#make test
 sudo make install
 sudo ln -sf /usr/local/ssl/bin/openssl `which openssl`
 cd ~
@@ -110,21 +124,11 @@ git clone https://github.com/carsenk/denarius
 cd denarius
 git checkout v3.4
 git pull
-qmake "USE_UPNP=1" "USE_QRCODE=1" OPENSSL_INCLUDE_PATH=/usr/local/ssl/include OPENSSL_LIB_PATH=/usr/local/ssl/lib denarius-qt.pro
-make -j4
+export QT_SELECT=qt5
+qmake -v
+qmake "USE_NATIVETOR=-" "USE_UPNP=1" "USE_QRCODE=1" OPENSSL_INCLUDE_PATH=/usr/local/ssl/include OPENSSL_LIB_PATH=/usr/local/ssl/lib denarius-qt.pro
+make
 sudo cp ~/denarius/Denarius /usr/local/bin/Denarius
-
-echo "Populate denarius.conf"
-mkdir ~/.denarius
-    # Get VPS IP Address
-    VPSIP=$(curl ipinfo.io/ip)
-    # create rpc user and password
-    rpcuser=$(openssl rand -base64 24)
-    # create rpc password
-    rpcpassword=$(openssl rand -base64 48)
-    echo -n "What is your fortunastakeprivkey? (Hint:genkey output)"
-    read FORTUNASTAKEPRIVKEY
-    echo -e "rpcuser=$rpcuser\nrpcpassword=$rpcpassword\nserver=1\nlisten=1\ndaemon=1\nport=9999\naddnode=denarius.host\naddnode=denarius.win\naddnode=denarius.pro\naddnode=triforce.black\nrpcallowip=127.0.0.1\nexternalip=$VPSIP:9999\nfortunastake=1\nfortunastakeprivkey=$FORTUNASTAKEPRIVKEY" > ~/.denarius/denarius.conf
                 ;;
         3)      echo 3 "Get Chaindata"
 
@@ -134,3 +138,6 @@ cd ~/.denarius
 rm -rf database txleveldb smsgDB
 wget https://github.com/carsenk/denarius/releases/download/v3.3.6/chaindata1612994.zip
 unzip chaindata1612994.zip
+                ;;
+esac
+echo Selected $choice
